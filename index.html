@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ArNova Video Processor — Timer Overlay · Cursor GIF · Speed Control</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0c0c0f;
+  --panel:#14141a;
+  --surface:#1c1c26;
+  --border:#2a2a3a;
+  --gold:#f0a500;
+  --orange:#ff6b35;
+  --text:#e8e8f0;
+  --muted:#6b6b88;
+  --green:#3ddc84;
+  --red:#ff4757;
+  --radius:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Mono',monospace;
+  overflow-x:hidden;
+  cursor:none;
+}
+
+/* ── Custom cursor ── */
+.cursor{
+  position:fixed;width:10px;height:10px;
+  background:var(--gold);border-radius:50%;
+  pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+  transition:transform .1s ease,background .2s;
+}
+.cursor-ring{
+  position:fixed;width:34px;height:34px;
+  border:1px solid var(--gold);border-radius:50%;
+  pointer-events:none;z-index:9998;
+  transform:translate(-50%,-50%);
+  transition:transform .18s ease,opacity .2s;
+  opacity:.5;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);}
+
+/* ── Nav ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(12,12,15,.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:0 40px;
+  display:flex;align-items:center;justify-content:space-between;
+  height:60px;
+}
+.nav-logo{
+  font-family:'Playfair Display',serif;
+  font-size:1.2rem;letter-spacing:.02em;
+  display:flex;align-items:center;gap:6px;
+}
+.nav-logo span:first-child{color:var(--gold);}
+.nav-links{display:flex;gap:32px;list-style:none;}
+.nav-links a{
+  color:var(--muted);font-size:.72rem;
+  text-decoration:none;letter-spacing:.12em;text-transform:uppercase;
+  transition:color .2s;
+}
+.nav-links a:hover{color:var(--gold);}
+.nav-cta{
+  background:var(--gold);color:var(--bg);
+  padding:8px 20px;font-size:.72rem;font-weight:500;
+  letter-spacing:.1em;text-transform:uppercase;
+  text-decoration:none;border-radius:3px;
+  transition:background .2s;
+}
+.nav-cta:hover{background:var(--orange);}
+
+/* ── Hero ── */
+#hero{
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;padding:100px 40px 60px;text-align:center;
+  overflow:hidden;
+}
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(var(--border) 1px,transparent 1px),
+    linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:60px 60px;
+  opacity:.18;
+  mask-image:radial-gradient(ellipse 80% 60% at 50% 50%,black,transparent);
+}
+.hero-glow{
+  position:absolute;
+  width:600px;height:600px;
+  background:radial-gradient(ellipse,rgba(240,165,0,.08) 0%,transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--surface);border:1px solid var(--border);
+  padding:6px 16px;border-radius:100px;
+  font-size:.68rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;
+  margin-bottom:32px;
+  animation:fadeUp .6s ease both;
+}
+.hero-badge span{color:var(--gold);}
+.hero-title{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(2.8rem,7vw,5.5rem);
+  font-weight:900;line-height:1.05;
+  margin-bottom:24px;
+  animation:fadeUp .6s .1s ease both;
+}
+.hero-title em{
+  font-style:normal;
+  background:linear-gradient(90deg,var(--gold),var(--orange));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hero-sub{
+  max-width:560px;
+  color:var(--muted);font-size:.9rem;line-height:1.8;
+  margin-bottom:40px;
+  animation:fadeUp .6s .2s ease both;
+}
+.hero-btns{
+  display:flex;gap:16px;flex-wrap:wrap;justify-content:center;
+  animation:fadeUp .6s .3s ease both;
+}
+.btn-primary{
+  background:var(--gold);color:var(--bg);
+  padding:14px 32px;font-size:.8rem;font-weight:500;
+  letter-spacing:.08em;text-transform:uppercase;
+  text-decoration:none;border-radius:4px;
+  transition:background .2s,transform .15s;display:inline-flex;align-items:center;gap:8px;
+}
+.btn-primary:hover{background:var(--orange);transform:translateY(-2px);}
+.btn-ghost{
+  border:1px solid var(--border);color:var(--text);
+  padding:14px 32px;font-size:.8rem;
+  letter-spacing:.08em;text-transform:uppercase;
+  text-decoration:none;border-radius:4px;
+  transition:border-color .2s,color .2s,transform .15s;
+}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-2px);}
+
+/* ── Stats strip ── */
+.stats-strip{
+  display:flex;justify-content:center;flex-wrap:wrap;gap:0;
+  margin-top:70px;
+  border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;
+  animation:fadeUp .6s .4s ease both;
+}
+.stat{
+  flex:1;min-width:140px;
+  padding:24px 32px;text-align:center;
+  border-right:1px solid var(--border);
+  background:var(--panel);
+}
+.stat:last-child{border-right:none;}
+.stat-num{
+  font-family:'Playfair Display',serif;
+  font-size:2rem;color:var(--gold);font-weight:700;
+}
+.stat-lbl{font-size:.68rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:4px;}
+
+/* ── Sections ── */
+section{padding:100px 40px;}
+.section-inner{max-width:1100px;margin:0 auto;}
+.section-tag{
+  font-size:.68rem;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;
+}
+.section-tag::before{content:'';display:block;width:24px;height:1px;background:var(--gold);}
+.section-title{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(1.8rem,4vw,2.8rem);font-weight:700;
+  line-height:1.15;margin-bottom:16px;
+}
+.section-title em{
+  font-style:normal;
+  background:linear-gradient(90deg,var(--gold),var(--orange));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.section-sub{color:var(--muted);font-size:.88rem;line-height:1.8;max-width:580px;}
+
+/* ── Feature cards ── */
+.features-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:2px;margin-top:60px;
+  border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;
+}
+.feature-card{
+  background:var(--panel);padding:36px 32px;
+  position:relative;overflow:hidden;
+  transition:background .25s;
+}
+.feature-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--gold),var(--orange));
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .3s ease;
+}
+.feature-card:hover{background:var(--surface);}
+.feature-card:hover::before{transform:scaleX(1);}
+.feature-icon{
+  font-size:1.8rem;margin-bottom:16px;display:block;
+}
+.feature-title{
+  font-size:.95rem;font-weight:500;color:var(--text);margin-bottom:10px;
+}
+.feature-desc{color:var(--muted);font-size:.8rem;line-height:1.8;}
+.feature-tag{
+  display:inline-block;margin-top:14px;
+  font-size:.65rem;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;
+  border:1px solid rgba(240,165,0,.3);padding:3px 10px;border-radius:100px;
+}
+
+/* ── How it works ── */
+#how{background:var(--panel);}
+.steps{display:flex;flex-direction:column;gap:0;margin-top:60px;max-width:800px;}
+.step{
+  display:flex;gap:32px;align-items:flex-start;
+  padding:36px 0;border-bottom:1px solid var(--border);
+  opacity:0;transform:translateY(20px);
+  transition:opacity .5s ease,transform .5s ease;
+}
+.step.visible{opacity:1;transform:translateY(0);}
+.step:last-child{border-bottom:none;}
+.step-num{
+  flex-shrink:0;width:48px;height:48px;
+  border:1px solid var(--border);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold);
+  background:var(--surface);
+}
+.step-body{}
+.step-title{font-size:.95rem;font-weight:500;color:var(--text);margin-bottom:8px;}
+.step-desc{color:var(--muted);font-size:.8rem;line-height:1.8;}
+.step-code{
+  margin-top:12px;background:var(--bg);
+  border:1px solid var(--border);border-radius:4px;
+  padding:12px 16px;font-size:.75rem;color:var(--green);
+  font-family:'DM Mono',monospace;
+  overflow-x:auto;white-space:pre;
+}
+
+/* ── Features detail / UI preview ── */
+.ui-preview{
+  margin-top:60px;
+  border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;background:var(--panel);
+}
+.ui-preview-topbar{
+  background:var(--surface);padding:12px 20px;
+  display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--border);
+}
+.ui-dot{width:10px;height:10px;border-radius:50%;}
+.ui-preview-body{padding:32px;display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.ui-section{
+  background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:20px;
+}
+.ui-section-title{
+  font-size:.65rem;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;
+  margin-bottom:14px;display:flex;align-items:center;gap:6px;
+}
+.ui-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.ui-label{font-size:.7rem;color:var(--muted);}
+.ui-input{
+  background:var(--surface);border:none;border-bottom:2px solid var(--border);
+  padding:6px 10px;font-size:.75rem;color:var(--text);
+  font-family:'DM Mono',monospace;border-radius:3px 3px 0 0;width:90px;
+}
+.ui-toggle{
+  width:40px;height:22px;background:var(--gold);border-radius:11px;
+  position:relative;flex-shrink:0;
+}
+.ui-toggle::after{
+  content:'';position:absolute;width:16px;height:16px;
+  background:white;border-radius:50%;top:3px;right:3px;
+}
+.ui-pill-group{display:flex;border:1px solid var(--border);border-radius:3px;overflow:hidden;}
+.ui-pill{padding:5px 14px;font-size:.7rem;color:var(--muted);}
+.ui-pill.active{background:var(--gold);color:var(--bg);}
+.ui-progress-track{
+  background:var(--surface);height:6px;border-radius:3px;margin-top:8px;overflow:hidden;
+}
+.ui-progress-fill{height:100%;width:72%;background:var(--gold);border-radius:3px;}
+.ui-run-btn{
+  margin-top:16px;background:var(--gold);color:var(--bg);
+  padding:12px;border-radius:6px;text-align:center;
+  font-size:.8rem;font-weight:500;letter-spacing:.06em;
+}
+
+/* ── Trial / pricing ── */
+#trial{background:var(--panel);}
+.trial-card{
+  max-width:680px;margin:60px auto 0;
+  border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;
+}
+.trial-header{
+  background:var(--surface);padding:32px;text-align:center;
+  border-bottom:1px solid var(--border);
+  position:relative;
+}
+.trial-header::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--gold),var(--orange));
+}
+.trial-badge{
+  display:inline-block;background:rgba(240,165,0,.15);
+  color:var(--gold);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
+  padding:4px 14px;border-radius:100px;margin-bottom:16px;
+  border:1px solid rgba(240,165,0,.3);
+}
+.trial-title{
+  font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;
+  margin-bottom:8px;
+}
+.trial-sub{color:var(--muted);font-size:.82rem;}
+.trial-body{padding:32px;}
+.trial-includes{list-style:none;display:flex;flex-direction:column;gap:12px;margin-bottom:28px;}
+.trial-includes li{
+  display:flex;align-items:flex-start;gap:12px;font-size:.82rem;color:var(--text);
+}
+.trial-includes li::before{content:'✓';color:var(--green);flex-shrink:0;font-weight:700;}
+.trial-limit{
+  background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.25);
+  border-radius:6px;padding:16px 20px;margin-bottom:24px;
+  font-size:.8rem;color:var(--orange);line-height:1.7;
+}
+.trial-limit strong{color:var(--orange);}
+.trial-cta{
+  display:flex;gap:12px;flex-wrap:wrap;
+}
+.trial-cta a{flex:1;min-width:180px;text-align:center;padding:14px;border-radius:4px;
+  font-size:.78rem;letter-spacing:.06em;text-decoration:none;text-transform:uppercase;
+  transition:transform .15s,filter .2s;
+}
+.trial-cta a:hover{transform:translateY(-2px);filter:brightness(1.1);}
+.trial-cta .wa{background:#25D366;color:white;}
+.trial-cta .em{background:var(--surface);color:var(--text);border:1px solid var(--border);}
+
+/* ── About / company ── */
+.about-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:60px;
+  align-items:center;margin-top:60px;
+}
+.about-text p{color:var(--muted);font-size:.85rem;line-height:1.9;margin-bottom:16px;}
+.about-text p strong{color:var(--text);}
+.about-links{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;}
+.about-link{
+  font-size:.72rem;color:var(--muted);text-decoration:none;
+  border:1px solid var(--border);padding:8px 16px;border-radius:100px;
+  transition:border-color .2s,color .2s;letter-spacing:.06em;
+  display:flex;align-items:center;gap:6px;
+}
+.about-link:hover{border-color:var(--gold);color:var(--gold);}
+.about-stats{display:flex;flex-direction:column;gap:16px;}
+.about-stat-row{
+  background:var(--panel);border:1px solid var(--border);border-radius:6px;
+  padding:20px 24px;display:flex;align-items:center;justify-content:space-between;
+  transition:border-color .2s;
+}
+.about-stat-row:hover{border-color:var(--gold);}
+.about-stat-label{font-size:.75rem;color:var(--muted);}
+.about-stat-val{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--gold);}
+
+/* ── Products grid ── */
+.products-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:16px;margin-top:60px;
+}
+.product-card{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  padding:28px;transition:border-color .25s,transform .2s;
+  text-decoration:none;color:inherit;display:block;
+}
+.product-card:hover{border-color:var(--gold);transform:translateY(-4px);}
+.product-card.active-card{border-color:var(--gold);}
+.product-card.active-card .product-tag{background:var(--gold);color:var(--bg);}
+.product-icon{font-size:1.6rem;margin-bottom:14px;}
+.product-name{font-size:.95rem;font-weight:500;margin-bottom:8px;}
+.product-desc{font-size:.78rem;color:var(--muted);line-height:1.75;margin-bottom:16px;}
+.product-tag{
+  display:inline-block;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+  padding:3px 10px;border-radius:100px;
+  border:1px solid var(--border);color:var(--muted);
+}
+.product-stack{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
+.stack-pill{
+  font-size:.62rem;color:var(--muted);
+  border:1px solid var(--border);padding:2px 8px;border-radius:100px;
+}
+
+/* ── FAQ ── */
+.faq-list{max-width:780px;margin-top:60px;display:flex;flex-direction:column;gap:2px;}
+.faq-item{background:var(--panel);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.faq-q{
+  padding:20px 24px;font-size:.85rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;
+  transition:color .2s;
+}
+.faq-q:hover{color:var(--gold);}
+.faq-chevron{
+  font-size:.7rem;color:var(--muted);
+  transition:transform .25s;flex-shrink:0;
+}
+.faq-item.open .faq-chevron{transform:rotate(180deg);}
+.faq-a{
+  max-height:0;overflow:hidden;
+  transition:max-height .3s ease,padding .3s ease;
+  font-size:.8rem;color:var(--muted);line-height:1.8;
+  padding:0 24px;
+}
+.faq-item.open .faq-a{max-height:300px;padding:0 24px 20px;}
+
+/* ── CTA banner ── */
+#cta{
+  background:var(--panel);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+}
+.cta-inner{
+  max-width:800px;margin:0 auto;text-align:center;
+}
+.cta-inner .section-title{margin-bottom:12px;}
+.cta-inner .section-sub{margin:0 auto 36px;}
+.cta-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;}
+
+/* ── Footer ── */
+footer{
+  background:var(--bg);border-top:1px solid var(--border);
+  padding:60px 40px 32px;
+}
+.footer-inner{max-width:1100px;margin:0 auto;}
+.footer-top{
+  display:grid;grid-template-columns:2fr 1fr 1fr 1fr;
+  gap:48px;padding-bottom:48px;border-bottom:1px solid var(--border);
+}
+.footer-brand .logo{
+  font-family:'Playfair Display',serif;font-size:1.2rem;
+  margin-bottom:12px;
+}
+.footer-brand .logo span{color:var(--gold);}
+.footer-brand p{font-size:.78rem;color:var(--muted);line-height:1.8;max-width:280px;}
+.footer-col-title{
+  font-size:.65rem;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;
+  margin-bottom:16px;
+}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:10px;}
+.footer-links a{font-size:.78rem;color:var(--muted);text-decoration:none;transition:color .2s;}
+.footer-links a:hover{color:var(--gold);}
+.footer-bottom{
+  padding-top:28px;display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;
+}
+.footer-bottom p{font-size:.72rem;color:var(--muted);}
+.footer-bottom span{color:var(--gold);}
+
+/* ── Animations ── */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(24px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.reveal{
+  opacity:0;transform:translateY(28px);
+  transition:opacity .6s ease,transform .6s ease;
+}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+/* ── Top gradient bar ── */
+.top-bar{
+  position:fixed;top:0;left:0;right:0;height:3px;z-index:200;
+  background:linear-gradient(90deg,var(--gold) 0%,var(--orange) 50%,var(--gold) 100%);
+  background-size:200% 100%;
+  animation:barSlide 3s linear infinite;
+}
+@keyframes barSlide{
+  0%{background-position:200% 0;}
+  100%{background-position:-200% 0;}
+}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  nav{padding:0 20px;}
+  .nav-links{display:none;}
+  section{padding:70px 20px;}
+  .about-grid{grid-template-columns:1fr;}
+  .footer-top{grid-template-columns:1fr 1fr;}
+  .ui-preview-body{grid-template-columns:1fr;}
+  .hero-title{font-size:2.4rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cur"></div>
+<div class="cursor-ring" id="ring"></div>
+<div class="top-bar"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo"><span>ArNova</span> VideoProcessor</div>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#trial">Pricing</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <a href="https://wa.me/919929321602?text=Hi%2C%20I%20want%20the%20ArNova%20Video%20Processor" class="nav-cta">Get Credits →</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+
+  <div class="hero-badge">
+    <span>●</span> ArNova Solutions · Video Tool · Windows EXE
+  </div>
+
+  <h1 class="hero-title">
+    Overlay Timers.<br/>
+    Animate Cursors.<br/>
+    <em>Speed Up Videos.</em>
+  </h1>
+
+  <p class="hero-sub">
+    A professional Windows desktop tool that burns a live timer onto your
+    videos, overlays animated GIF cursors at exact timestamps, and
+    controls playback speed — all without touching a video editor.
+  </p>
+
+  <div class="hero-btns">
+    <a href="https://wa.me/919929321602?text=Hi%2C%20I%20want%20to%20get%20the%20ArNova%20Video%20Processor" class="btn-primary">
+      💬 Get the App Free
+    </a>
+    <a href="#how" class="btn-ghost">See How It Works</a>
+  </div>
+
+  <div class="stats-strip reveal">
+    <div class="stat">
+      <div class="stat-num">4</div>
+      <div class="stat-lbl">Free Credits</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">0</div>
+      <div class="stat-lbl">Install Needed</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">100%</div>
+      <div class="stat-lbl">Offline</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">1-Click</div>
+      <div class="stat-lbl">EXE Output</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-inner">
+    <div class="section-tag">002 — What It Does</div>
+    <h2 class="section-title">Everything in <em>One EXE.</em></h2>
+    <p class="section-sub">
+      No Python required. No video editor. Drop the EXE and run — every feature
+      works offline, instantly.
+    </p>
+
+    <div class="features-grid reveal">
+      <div class="feature-card">
+        <span class="feature-icon">⏱</span>
+        <div class="feature-title">Live Timer Overlay</div>
+        <div class="feature-desc">
+          Burns a real-time elapsed timer (HH:MM:SS) directly onto your video frames.
+          Position it top-left or top-right. Green text, always visible.
+          Perfect for screen recordings, demos, and tutorials.
+        </div>
+        <span class="feature-tag">Toggle On/Off</span>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🖱</span>
+        <div class="feature-title">Animated Cursor GIF</div>
+        <div class="feature-desc">
+          Overlay any animated GIF as a cursor at a precise X/Y position.
+          Control exactly when it appears (start second) and disappears
+          (end second). Load from a URL or local file. Supports transparency.
+        </div>
+        <span class="feature-tag">Pixel-Perfect Timing</span>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">⚡</span>
+        <div class="feature-title">Speed Control</div>
+        <div class="feature-desc">
+          Speed up or slow down playback by any factor.
+          1.0 = normal, 2.0 = 2× faster, 0.5 = half speed.
+          Frame-skipping preserves cursor visibility even at high speeds.
+        </div>
+        <span class="feature-tag">Any Speed Factor</span>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📦</span>
+        <div class="feature-title">FFmpeg Compression</div>
+        <div class="feature-desc">
+          Automatically compresses the output with FFmpeg (H.264, CRF 23)
+          for 10–20 MB files with no visible quality loss. FFmpeg is bundled
+          inside the EXE — no separate install needed.
+        </div>
+        <span class="feature-tag">Bundled FFmpeg</span>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🎨</span>
+        <div class="feature-title">Beautiful Dark UI</div>
+        <div class="feature-desc">
+          Custom-built Tkinter interface with toggle switches, pill selectors,
+          focus-glow inputs, animated progress bar, and a colour-coded live log.
+          Runs on any Windows 10/11 machine.
+        </div>
+        <span class="feature-tag">ArNova Design</span>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📂</span>
+        <div class="feature-title">Instant Output Actions</div>
+        <div class="feature-desc">
+          After processing, one click to play the output video in your
+          default player, or open Windows Explorer with the file already
+          selected. No hunting through folders.
+        </div>
+        <span class="feature-tag">Play · Open Folder</span>
+      </div>
+    </div>
+
+    <!-- UI Preview mockup -->
+    <div class="ui-preview reveal" style="margin-top:60px;">
+      <div class="ui-preview-topbar">
+        <div class="ui-dot" style="background:#ff5f57;"></div>
+        <div class="ui-dot" style="background:#ffbd2e;"></div>
+        <div class="ui-dot" style="background:#28c840;"></div>
+        <span style="font-size:.72rem;color:var(--muted);margin-left:10px;">ArNova VideoProcessor.exe</span>
+      </div>
+      <div style="height:3px;background:linear-gradient(90deg,var(--gold),var(--orange));"></div>
+      <div class="ui-preview-body">
+        <div>
+          <div class="ui-section">
+            <div class="ui-section-title">⏱ Timer</div>
+            <div class="ui-row">
+              <div class="ui-toggle"></div>
+              <div class="ui-label">Visible</div>
+            </div>
+            <div class="ui-row" style="margin-top:10px;">
+              <div class="ui-label" style="margin-right:8px;">Position</div>
+              <div class="ui-pill-group">
+                <div class="ui-pill">Left</div>
+                <div class="ui-pill active">Right</div>
+              </div>
+            </div>
+          </div>
+          <div class="ui-section" style="margin-top:16px;">
+            <div class="ui-section-title">⚡ Speed Factor</div>
+            <div class="ui-row">
+              <input class="ui-input" value="1.0" readonly/>
+              <div class="ui-label">× (1.0 = normal)</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="ui-section">
+            <div class="ui-section-title">🖱 Cursor Overlay</div>
+            <div class="ui-row">
+              <div class="ui-toggle"></div>
+              <div class="ui-label">Visible</div>
+            </div>
+            <div style="margin-top:10px;">
+              <div class="ui-label" style="margin-bottom:6px;">START (s) &nbsp; END (s) &nbsp; GIF FPS</div>
+              <div class="ui-row">
+                <input class="ui-input" value="0.36" readonly style="width:60px;"/>
+                <input class="ui-input" value="43.0" readonly style="width:60px;"/>
+                <input class="ui-input" value="10.0" readonly style="width:60px;"/>
+              </div>
+            </div>
+          </div>
+          <div class="ui-section" style="margin-top:16px;">
+            <div class="ui-section-title">◈ Progress</div>
+            <div class="ui-progress-track"><div class="ui-progress-fill"></div></div>
+            <div class="ui-run-btn" style="margin-top:12px;">▶ RUN PROCESSING</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="section-inner">
+    <div class="section-tag">003 — Step By Step</div>
+    <h2 class="section-title">How It <em>Works.</em></h2>
+    <p class="section-sub">
+      From raw video to processed output in under 5 minutes.
+      No setup, no configuration files, no command line.
+    </p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-body">
+          <div class="step-title">Download & Run the EXE</div>
+          <div class="step-desc">
+            Get the <code>ArNova VideoProcessor.exe</code> from the admin. Double-click to launch —
+            no Python, no FFmpeg install, no dependencies needed. Everything is bundled inside.
+          </div>
+          <div class="step-code">ArNova VideoProcessor.exe  ← just double-click</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <div class="step-title">Browse & Select Your Video</div>
+          <div class="step-desc">
+            Click the Browse button, select any <code>.mp4</code> file on your machine.
+            The full path fills in automatically.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-body">
+          <div class="step-title">Configure Timer</div>
+          <div class="step-desc">
+            Toggle the timer on or off. Choose whether it appears in the
+            top-left or top-right corner of the video using the pill selector.
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-body">
+          <div class="step-title">Configure Cursor GIF</div>
+          <div class="step-desc">
+            Paste a GIF URL (or local path). Set the exact second it should
+            appear (Start) and disappear (End). Set X/Y position on screen,
+            physical size in cm, and animation FPS.
+          </div>
+          <div class="step-code">Start: 0.36s  →  End: 43.0s  →  X: 20px  Y: 100px</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">05</div>
+        <div class="step-body">
+          <div class="step-title">Set Speed Factor</div>
+          <div class="step-desc">
+            Enter any multiplier. <code>1.0</code> keeps original speed.
+            <code>2.0</code> doubles speed. <code>0.5</code> slows it down.
+            The cursor stays perfectly visible even at high speeds.
+          </div>
+          <div class="step-code">1.0 = normal  ·  2.0 = 2× faster  ·  0.5 = slow-mo</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">06</div>
+        <div class="step-body">
+          <div class="step-title">Click RUN — Get Your Video</div>
+          <div class="step-desc">
+            Hit the amber <strong>RUN PROCESSING</strong> button. Watch the live log
+            and progress bar. When done, click <strong>Play Video</strong> to preview
+            or <strong>Open in Folder</strong> to grab the file. Output is saved next to
+            the original with a timestamp in the filename.
+          </div>
+          <div class="step-code">Output: Video_2026-03-16_2026_03_16_18^00_processed.mp4</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRIAL / PRICING -->
+<section id="trial">
+  <div class="section-inner">
+    <div class="section-tag">004 — Pricing</div>
+    <h2 class="section-title">Start <em>Free.</em> Scale When Ready.</h2>
+    <p class="section-sub">
+      Every user gets 4 free video processes. Need more? Contact the admin to unlock unlimited credits instantly.
+    </p>
+
+    <div class="trial-card reveal">
+      <div class="trial-header">
+        <div class="trial-badge">Free Trial</div>
+        <div class="trial-title">4 Video Credits</div>
+        <div class="trial-sub">No sign-up. No credit card. Just download and run.</div>
+      </div>
+      <div class="trial-body">
+        <ul class="trial-includes">
+          <li>Full access to all features — timer, cursor, speed control</li>
+          <li>FFmpeg compression bundled — works on any Windows PC</li>
+          <li>Process up to 4 videos at full quality</li>
+          <li>Output saved with timestamp, original untouched</li>
+          <li>Play & Open Folder buttons after every process</li>
+        </ul>
+
+        <div class="trial-limit">
+          <strong>After 4 videos:</strong> A popup appears asking you to contact the admin for more credits. Your remaining credits are tracked locally — no internet required. WhatsApp or email the admin and credits are unlocked same day.
+        </div>
+
+        <div class="trial-cta">
+          <a href="https://wa.me/919929321602?text=Hi%2C%20I%20want%20to%20unlock%20ArNova%20Video%20Processor%20credits" class="wa">
+            💬 WhatsApp for Credits
+          </a>
+          <a href="mailto:official.abhishant.kumar@gmail.com?subject=Video Processor Credits" class="em">
+            ✉ Email Admin
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="section-inner">
+    <div class="section-tag">005 — The Company</div>
+    <h2 class="section-title">Built by <em>ArNova Solutions.</em></h2>
+
+    <div class="about-grid reveal">
+      <div class="about-text">
+        <p>
+          <strong>ArNova Solutions</strong> is a compact, precision-built technology company
+          based in Gurugram, India — delivering QA automation, fraud intelligence,
+          full-stack development, and custom software products.
+        </p>
+        <p>
+          The Video Processor was built as an internal tool for processing screen recordings
+          with overlaid timers and cursor animations — and turned into a distributable product.
+          Every ArNova tool is <strong>production-grade, portable, and built to run itself.</strong>
+        </p>
+        <p>
+          From <strong>billing software</strong> to <strong>browser extension fraud detection</strong>,
+          from <strong>automated job applications</strong> to <strong>cinematic slideshow engines</strong>
+          — ArNova covers the full software stack with zero manual operation.
+        </p>
+        <div class="about-links">
+          <a href="https://arnovasolutions.netlify.app/" class="about-link" target="_blank">🌐 ArNova Website ↗</a>
+          <a href="https://github.com/AbhishantKumar1602" class="about-link" target="_blank">⌨ GitHub ↗</a>
+          <a href="https://www.linkedin.com/in/abhishant-kumar-372b18279/" class="about-link" target="_blank">💼 LinkedIn ↗</a>
+          <a href="https://wa.me/919929321602" class="about-link" target="_blank">💬 WhatsApp ↗</a>
+        </div>
+      </div>
+      <div class="about-stats">
+        <div class="about-stat-row">
+          <div class="about-stat-label">Projects Shipped</div>
+          <div class="about-stat-val">35+</div>
+        </div>
+        <div class="about-stat-row">
+          <div class="about-stat-label">Automation Tools Built</div>
+          <div class="about-stat-val">17+</div>
+        </div>
+        <div class="about-stat-row">
+          <div class="about-stat-label">Test Coverage</div>
+          <div class="about-stat-val">94%</div>
+        </div>
+        <div class="about-stat-row">
+          <div class="about-stat-label">Status</div>
+          <div class="about-stat-val" style="font-size:.9rem;color:var(--green);">● Open</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- OTHER PRODUCTS -->
+<section id="products" style="background:var(--panel);">
+  <div class="section-inner">
+    <div class="section-tag">006 — More Tools</div>
+    <h2 class="section-title">Other <em>ArNova Products.</em></h2>
+    <p class="section-sub">
+      Every product ships as a portable EXE or live web app. No subscriptions. No SaaS fees.
+    </p>
+
+    <div class="products-grid reveal">
+      <div class="product-card active-card">
+        <div class="product-icon">🎬</div>
+        <div class="product-name">Video Processor</div>
+        <div class="product-desc">Timer overlays, cursor GIF animation, and speed control for any MP4. You are here.</div>
+        <span class="product-tag">You Are Here</span>
+        <div class="product-stack">
+          <span class="stack-pill">Python</span>
+          <span class="stack-pill">OpenCV</span>
+          <span class="stack-pill">Tkinter</span>
+          <span class="stack-pill">FFmpeg</span>
+        </div>
+      </div>
+
+      <a href="https://arnovabillingapp.netlify.app/" class="product-card" target="_blank">
+        <div class="product-icon">🧾</div>
+        <div class="product-name">ArNova Billing Software</div>
+        <div class="product-desc">Complete offline billing for clinics and shops. PDF invoices, patient records, Excel export. ₹14,000 one-time.</div>
+        <span class="product-tag">Commercial · Live</span>
+        <div class="product-stack">
+          <span class="stack-pill">PyQt6</span>
+          <span class="stack-pill">SQLite</span>
+          <span class="stack-pill">PDF</span>
+        </div>
+      </a>
+
+      <a href="https://notificationmanagerv2.netlify.app/" class="product-card" target="_blank">
+        <div class="product-icon">🔔</div>
+        <div class="product-name">Notification Manager</div>
+        <div class="product-desc">Reads Windows notification database and silently kills unwanted popups. Portable EXE. $49 one-time.</div>
+        <span class="product-tag">$49 · Windows</span>
+        <div class="product-stack">
+          <span class="stack-pill">Python</span>
+          <span class="stack-pill">.NET 8</span>
+          <span class="stack-pill">WinAPI</span>
+        </div>
+      </a>
+
+      <!-- <a href="https://akmonitoring.netlify.app/" class="product-card" target="_blank">
+        <div class="product-icon">🛡️</div>
+        <div class="product-name">Fraud Intelligence Dashboard</div>
+        <div class="product-desc">Live monitoring platform for affiliate fraud, browser extension violations, and risk scoring.</div>
+        <span class="product-tag">Live · For Sale</span>
+        <div class="product-stack">
+          <span class="stack-pill">JS</span>
+          <span class="stack-pill">Chart.js</span>
+          <span class="stack-pill">REST API</span>
+        </div>
+      </a> -->
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="section-inner">
+    <div class="section-tag">007 — Questions</div>
+    <h2 class="section-title">Frequently <em>Asked.</em></h2>
+
+    <div class="faq-list reveal">
+      <div class="faq-item">
+        <div class="faq-q">Do I need Python or FFmpeg installed?
+          <span class="faq-chevron">▼</span>
+        </div>
+        <div class="faq-a">No. The EXE bundles everything — Python runtime, OpenCV, Pillow, FFmpeg — all inside one file. Just double-click and run on any Windows 10/11 machine.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What video formats are supported?
+          <span class="faq-chevron">▼</span>
+        </div>
+        <div class="faq-a">The tool works with MP4 files. Output is always H.264 MP4 compressed with FFmpeg for maximum compatibility with all players and platforms.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How do I get the cursor GIF to show at the right time?
+          <span class="faq-chevron">▼</span>
+        </div>
+        <div class="faq-a">Set the Start (s) and End (s) fields to the exact seconds in the video. For example: Start 0.36, End 43.0 shows the cursor from 0.36 seconds to 43 seconds. The timer overlay on the video helps you identify the exact timestamps first.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What happens after my 4 free credits run out?
+          <span class="faq-chevron">▼</span>
+        </div>
+        <div class="faq-a">A popup appears with your admin's WhatsApp and email. Contact the admin to get more credits unlocked instantly. Credits are tracked locally on your machine using the Windows registry.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Can I use a local GIF instead of a URL?
+          <span class="faq-chevron">▼</span>
+        </div>
+        <div class="faq-a">Yes. Paste the full local path to the GIF file in the GIF URL/Path field, e.g. C:\Users\you\Downloads\cursor.gif — it works exactly the same as a URL.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How big is the output file?
+          <span class="faq-chevron">▼</span>
+        </div>
+        <div class="faq-a">FFmpeg compresses the output with CRF 23 (high quality, small size). A typical 1-minute screen recording compresses to 5–20 MB depending on content complexity.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Does it work on macOS or Linux?
+          <span class="faq-chevron">▼</span>
+        </div>
+        <div class="faq-a">Currently the EXE is Windows-only. The Python source code runs on macOS/Linux if you install the dependencies manually. Contact the admin if you need a cross-platform build.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="section-inner cta-inner">
+    <div class="section-tag" style="justify-content:center;">Get Started Today</div>
+    <h2 class="section-title">Ready to Process <em>Your Videos?</em></h2>
+    <p class="section-sub">
+      Get the EXE for free. 4 videos on us. Unlock unlimited credits any time with a quick message.
+    </p>
+    <div class="cta-btns">
+      <a href="https://wa.me/919929321602?text=Hi%2C%20I%20want%20the%20ArNova%20Video%20Processor%20EXE" class="btn-primary">💬 Get Free EXE on WhatsApp</a>
+      <a href="https://arnovasolutions.netlify.app/" class="btn-ghost" target="_blank">← Back to ArNova Site</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="logo"><span>ArNova</span> Solutions</div>
+        <p>A compact, precision-built technology company delivering QA automation, fraud intelligence, and software products from Gurugram, India.</p>
+      </div>
+      <div>
+        <div class="footer-col-title">Product</div>
+        <ul class="footer-links">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#how">How It Works</a></li>
+          <li><a href="#trial">Pricing</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Other Products</div>
+        <ul class="footer-links">
+          <li><a href="https://arnovabillingapp.netlify.app/" target="_blank">Billing Software</a></li>
+          <li><a href="https://notificationmanagerv2.netlify.app/" target="_blank">Notification Manager</a></li>
+          <!-- <li><a href="https://akmonitoring.netlify.app/" target="_blank">Fraud Dashboard</a></li> -->
+          <li><a href="https://arnovasolutions.netlify.app/#projects" target="_blank">All Projects →</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Contact</div>
+        <ul class="footer-links">
+          <li><a href="https://wa.me/919929321602" target="_blank">💬 WhatsApp</a></li>
+          <li><a href="mailto:official.abhishant.kumar@gmail.com">✉ Email</a></li>
+          <li><a href="https://www.linkedin.com/in/abhishant-kumar-372b18279/" target="_blank">💼 LinkedIn</a></li>
+          <li><a href="https://github.com/AbhishantKumar1602" target="_blank">⌨ GitHub</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025–2026 <span>ArNova Solutions</span> · Gurugram, India</p>
+      <p>Intelligence · Automation · Delivery</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Custom cursor ──────────────────────────────
+const cur  = document.getElementById('cur');
+const ring = document.getElementById('ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function ani(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(ani);})();
+document.querySelectorAll('a,button,.faq-q').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{cur.style.transform='translate(-50%,-50%) scale(2.5)';ring.style.opacity='0';});
+  el.addEventListener('mouseleave',()=>{cur.style.transform='translate(-50%,-50%) scale(1)';ring.style.opacity='.5';});
+});
+
+// ── Intersection observer for reveal animations ──
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}
+  });
+},{threshold:.12});
+document.querySelectorAll('.reveal,.step').forEach(el=>obs.observe(el));
+
+// ── FAQ accordion ──────────────────────────────
+document.querySelectorAll('.faq-item').forEach(item=>{
+  item.querySelector('.faq-q').addEventListener('click',()=>{
+    const open = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open'));
+    if(!open) item.classList.add('open');
+  });
+});
+
+// ── Smooth active nav highlight ────────────────
+const sections = document.querySelectorAll('section[id]');
+const navLinks  = document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll',()=>{
+  let cur='';
+  sections.forEach(s=>{if(window.scrollY>=s.offsetTop-80)cur=s.id;});
+  navLinks.forEach(a=>{
+    a.style.color = a.getAttribute('href')==='#'+cur ? 'var(--gold)' : '';
+  });
+});
+
+// ── Progress bar on run button animation loop ──
+const fill = document.querySelector('.ui-progress-fill');
+if(fill){
+  let w=0,dir=1;
+  setInterval(()=>{
+    w+=dir*0.4;
+    if(w>=100){dir=-1;} if(w<=0){dir=1;}
+    fill.style.width=w+'%';
+  },30);
+}
+</script>
+</body>
+</html>
